@@ -1,0 +1,69 @@
+ingresscontroller:
+  item:
+    name: app-ingress
+    instancenumber: "01"
+    cluster_name: ocp
+    base_domain: cloud.lab
+    replicas: 2
+    proxynoderole: infra-proxy
+  endpointPublishingStrategy:
+    nodePort:
+      protocol: "PROXY"
+  http:
+    port: 80
+    nodeport: 30290
+  https:
+    port: 443
+    nodeport: 32443
+  metrics:
+    port: 1936
+    nodeport: 30004
+
+addons:
+  grafana: 
+    enabled: false
+  kiali:
+    enabled: true
+  prometheus:
+    enabled: false
+  
+servicemesh:
+  namespace: istio-system
+  sidecarnamespaces:
+    - .
+    - default
+  enabled: true
+  version: v2.6
+  tls:
+    min: TLSv1_2
+    max: TLSv1_3
+  ciphersuites:
+  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+  - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+  ecdhcurves:
+  - X25519
+  - CurveP256
+  accessLogging:
+    file:
+      name: "/dev/stdout"
+      format: '[%START_TIME%] \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %RESPONSE_CODE% %RESPONSE_FLAGS% %RESPONSE_CODE_DETAILS% %CONNECTION_TERMINATION_DETAILS% \"%UPSTREAM_TRANSPORT_FAILURE_REASON%\" %BYTES_RECEIVED% %BYTES_SENT% %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% \"%REQ(X-FORWARDED-FOR)%\" \"%REQ(USER-AGENT)%\" \"%REQ(X-REQUEST-ID)%\" \"%REQ(:AUTHORITY)%\" \"%UPSTREAM_HOST%\" %DOWNSTREAM_TLS_CIPHER% %DOWNSTREAM_TLS_VERSION% %UPSTREAM_CLUSTER% %UPSTREAM_LOCAL_ADDRESS% %DOWNSTREAM_LOCAL_ADDRESS% %DOWNSTREAM_REMOTE_ADDRESS% %REQUESTED_SERVER_NAME% %ROUTE_NAME% %UPSTREAM_TLS_VERSION% %UPSTREAM_TLS_CIPHER%\n'
+  pilotEnvSettings:
+    PILOT_SCOPE_GATEWAY_TO_NAMESPACE: 'true'
+    VERIFY_CERTIFICATE_AT_CLIENT: 'true'
+    PILOT_FILTER_GATEWAY_CLUSTER_CONFIG: 'true'
+
+servicemeshMonitoring:
+  scrapeInterval: 30s
+  scrapePort: http-monitoring
+  scrapeScheme: http
+  labelSelector: istiod
+
+network:
+  allow:
+    apiserver:
+    - cidr: 100.10.0.0/16
+    - cidr: 100.10.10.1/24
+    - cidr: 100.10.10.2/24
+    - cidr: 100.10.10.3.24

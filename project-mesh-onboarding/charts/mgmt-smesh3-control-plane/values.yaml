@@ -1,0 +1,72 @@
+servicemesh:
+  namespace: istio-system
+  vaultsenamespace: <<testing>>
+  vautlsehost: <<testing>>
+  apiservercidr: <<testing>>
+  additionalsidecarnamespaces:
+    - default
+    - .
+  ossm3operatornamespace: openshift-kiali
+  ossm3version: v1.24-latest
+  ossm3cniversion: v1.24-latest
+  ossm3vaules:
+    meshconfig:
+      defaultDestinationRuleExportTo:
+      - "."
+      defaultVirtualServiceExportTo:
+      - "."
+      tlsDefaults:
+        cipherSuites:
+          - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        ecdhcurves:
+          - X25519
+          - CurveP256
+        minProtocolVersion: TLSV1_2
+      enableTracing: false
+      VerifyCertificateAtClient: true
+      accessLogFile: /dev/stdout
+      accessLogFormat: |
+        [%START_TIME%] \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %RESPONSE_CODE% %RESPONSE_FLAGS% %RESPONSE_CODE_DETAILS% %CONNECTION_TERMINATION_DETAILS% \"%UPSTREAM_TRANSPORT_FAILURE_REASON%\" %BYTES_RECEIVED% %BYTES_SENT% %DURATION% %RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)% \"%REQ(X-FORWARDED-FOR)%\" \"%REQ(USER-AGENT)%\" \"%REQ(X-REQUEST-ID)%\" \"%REQ(:AUTHORITY)%\" \"%UPSTREAM_HOST%\" %DOWNSTREAM_TLS_CIPHER% %DOWNSTREAM_TLS_VERSION% %UPSTREAM_CLUSTER% %UPSTREAM_LOCAL_ADDRESS% %DOWNSTREAM_LOCAL_ADDRESS% %DOWNSTREAM_REMOTE_ADDRESS% %REQUESTED_SERVER_NAME% %ROUTE_NAME% %UPSTREAM_TLS_VERSION% %UPSTREAM_TLS_CIPHER%
+      enableAutoMtls: true
+      OutboundTrafficPolicy:
+        mode: REGISTRY_ONLY
+      discoverySelectors:
+      - matchLabels:
+          istio-discovery: enabled
+      extensionProviders:
+      - name: prometheus
+        prometheus: {}
+    pilot:
+      replicaCount: 2
+      autoscaleEnabled: false
+      env:
+        PILOT_SCOPE_GATEWAY_TO_NAMESPACE: 'true'
+        VERIFY_CERTIFICATE_AT_CLIENT: 'true'
+        PILOT_FILTER_GATEWAY_CLUSTER_CONFIG: 'true'
+        ENABLE_DEBUG_ON_HTTP: 'false'
+    global:
+      defaultPodDisruptionBudget:
+        enabled: false
+      proxy:
+        tracer: "none"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+servicemeshMonitoring:
+  scrapeInterval: 30s
+  scrapePort: http-monitoring
+  scrapeScheme: http
+  labelSelector: istiod
+
+network:
+  allow:
+    apiserver:
+      - <<testing>>
