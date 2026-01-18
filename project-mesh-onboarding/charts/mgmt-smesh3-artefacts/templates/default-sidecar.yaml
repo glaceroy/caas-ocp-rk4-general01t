@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: {{ .Values.servicemesh.namespace }}
+spec:
+  egress:
+  - hosts:
+{{- if hasKey .Values.servicemesh "vaultsenamespace" }}
+    - {{ .Values.servicemesh.vaultsenamespace }}/*
+{{- end }}
+    - {{ .Values.servicemesh.namespace }}/*
+    {{- range .Values.servicemesh.additionalsidecarnamespaces }}
+    - {{ . }}/*
+    {{- end }}

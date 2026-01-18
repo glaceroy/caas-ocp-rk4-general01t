@@ -1,0 +1,145 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: istiod-alerts
+  namespace: istio-system
+spec:
+  groups:
+  - name: istio-control-plane
+    rules:
+    - alert: IstioSidecarInjectionFailure
+      annotations:
+        summary: "Istio sidecar injection failure"
+        description: "Istio sidecar injection > 5% have failed in last 5 minutes."
+      expr: sum(irate(sidecar_injection_failure_total{namespace="istio-system"}[5m])) / sum(irate(sidecar_injection_total{namespace="istio-system"}[5m])) * 100 > 5
+      for: 5m
+      labels:
+        severity: major
+    - alert: IstioSlowConvergence
+      annotations:
+        summary: "Istio control plane is taking too long to converge"
+        description: "More than 5% of Istio configuration convergences are taking longer than 3 second"
+      expr: sum(rate(pilot_proxy_convergence_time_bucket{le="3"[5m])) / sum(rate(pilot_proxy_convergence_time[5m])) * 100 < 95
+      for: 5m
+      labels:
+        severity: major
+    - alert: IstioHighPilotUpdates
+      annotations:
+        summary: "Istio Pilot Updates are excessive"
+        description: "Pilot is receiving more than 100 updates during a 1 minute period for 5 minutes."
+      expr: sum(pilot_inbound_updates) - sum(pilot_inbound_updates offset 1m) > 100 
+      for: 5m
+      labels:
+        severity: major
+    - alert: IstioXDSRejections
+      annotations:
+        summary: "Istio XDS Rejections are high"
+        description: "XDS rejects are greater than 5% within a 5 minute period."
+      expr: sum(irate(pilot_total_xds_rejects{namespace="istio-system"}[5m])) / sum(irate(pilot_xds_pushes{namespace="istio-system"}[5m])) * 100 > 5
+      for: 5m
+      labels:
+        severity: major
+    - alert: IstioCertIssuanceFailures
+      annotations:
+        summary: "Istio certificate issuance failures in last 5 minutes"
+        description: "Istio certificate issueance has failed in the last 5 minutes."
+      expr: sum(citadel_server_cert_count) - sum(citadel_server_successful_cert_issuance_count) > (sum (citadel_server_csr_count offset 5m) - sum (citadel_server_successful_cert_issuance_count offset 5m) + 5)
+      labels:
+        severity: major
+  - name: istio-control-plane-infra
+    rules:
+    - alert: IstiodContainerCPUUsageHigh
+      annotations:
+        description: "Istiod container CPU usage is above 80%"
+        summary: |
+          Istiod container CPU usage (namespace {{ "{{ $labels.namespace }}"  }}) (pod {{ "{{ $labels.pod }}" }}) (container {{ "{{ $labels.container }}" }}) VALUE = {{ "{{ $value }}" }}
+      expr: (sum(rate(container_cpu_usage_seconds_total{namespace="istio-system",container="discovery"}[5m])) BY (pod) * 100) > 80
+      for: 5m
+      labels:
+        severity: minor
+    - alert: IstiodContainerMemoryUsageHigh
+      annotations:
+        description: "Istiod container Memory usage is above 80%"
+        summary: |
+          Istiod container Memory usage (namespace {{ "{{ $labels.namespace }}"  }}) (pod {{ "{{ $labels.pod }}" }}) (container {{ "{{ $labels.container }}" }}) VALUE = {{ "{{ $value }}" }}
+      expr: (sum(container_memory_working_set_bytes{namespace="istio-system",container="discovery"}) BY (pod) / sum(container_spec_memory_limit_bytes{namespace="istio-system",container="discovery"}) BY (pod) > 0)* 100) > 80
+      for: 5m
+      labels:
+        severity: major
+    - alert: IstiodMemoryUsageIncreaseRateHigh
+      annotations:
+        description: "Istiod Memory usage increase more than 1k Bytes/sec"
+        summary: |
+          Istiod Container Memory usage increases rate high, VALUE = {{ "{{ $value }}" }}
+      expr: sum(deriv(container_memory_working_set_bytes{namespace="istio-system",pod=~"istiod-.*"}[60m])) > 1000
+      for: 300m
+      labels:
+        severity: major
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ocp-app-component-alerts
+spec:
+  groups:
+  - name: ocp-app-component-alerts
+    rules:
+    - alert: OCPPodsTerminated
+      annotations:
+        alertclass: 1000501_PodProblem
+        description: Pod {{ "{{ $labels.pod }}" }} in namespace {{ "{{ $labels.namespace }}" }} has a termination state of {{ "{{ $labels.reason }}" }}.
+        summary: "Pod Terminated in namespace {{ "{{ $labels.namespace }}" }}"
+        type: pod
+      expr: sum_over_time(kube_pod_container_status_terminated_reason{namespace="istio-system",reason!="Completed|ContainerStatusUnknown"}[2m]) > sum_over_time(kube_pod_container_status_terminated_reason{namespace="istio-system",reason!="Completed|ContainerStatusUnknown"}[2m] offset 2m)
+      labels:
+        severity: major
+    - alert: OCPDeploymentReplicasMismatch
+      annotations:
+        alertclass: 1000501_DeploymentMismatch
+        description: Deployment {{ "{{ $labels.deployment }}" }}/{{ "{{ $labels.namespace }}" }} has not matched the expected name of replicas
+        summary: "Deployment Replicas Mismatch in namespace {{ "{{ $labels.namespace }}" }}"
+        type: pod
+      expr: kube_deployment_spec_replicas{namespace="istio-system"} != kube_deployment_status_replicas_available{namespace="istio-system"}
+      for: 10m
+      labels:
+        severity: major
+    - alert: OCPStatefulSetReplicasMismatch
+      annotations:
+        alertclass: 1000501_PodProblem
+        description: StatefulSet {{ "{{ $labels.namespace }}" }}/{{ "{{ $labels.statefulset }}" }} has not matched the expected name of replicas
+        summary: "StatefulSet Replicas Mismatch in namespace {{ "{{ $labels.namespace }}" }}"
+        type: pod
+      expr: kube_statefulset_spec_replicas_ready{namespace="istio-system"} != kube_statefulset_status_replicas{namespace="istio-system"}
+      for: 10m
+      labels:
+        severity: major
+    - alert: OCPPodsFailed
+      annotations:
+        alertclass: 1000501_PodProblem
+        description: Pod {{ "{{ $labels.pod }}" }} in down in namespace {{ "{{ $labels.namespace }}" }}
+        summary: "Pod is down in namespace {{ "{{ $labels.namespace }}" }}"
+        type: pod
+      expr: sum by (namespace, pod) (kube_pod_status_phase{namespace="istio-system",condition="false"} == 1 ) > 0 AND sum by (namespace, pod) (kube_pod_status_phase{namespace="istio-system",phase~="^(Failed|Pending|Unknown)$"} == 1 ) > 0
+      for: 10m
+      labels:
+        severity: major
+    - alert: OCPPodsFrequentlyRestarting
+      annotations:
+        alertclass: 1000501_PodProblem
+        description: Pod {{ "{{ $labels.pod }}" }} in namespace {{ "{{ $labels.namespace }}" }} is frequently restarting.
+        summary: "Pod Frequently Restarting in namespace {{ "{{ $labels.namespace }}" }}"
+        type: pod
+      expr: delta(kube_pod_container_status_restarts_total{namespace="istio-system"}[1h]) > 2
+      for: 10m
+      labels:
+        severity: major
+    - alert: OCPJobsFailed
+      annotations:
+        alertclass: 1000501_JobFailed
+        description: Job {{ "{{ $labels.job }}" }} in namespace {{ "{{ $labels.namespace }}" }} has failed.
+        summary: "Job Failed in namespace {{ "{{ $labels.namespace }}" }}"
+        type: pod
+      expr: kube_job_failed{namespace="istio-system"} > 0
+      for: 10m
+      labels:
+        severity: major

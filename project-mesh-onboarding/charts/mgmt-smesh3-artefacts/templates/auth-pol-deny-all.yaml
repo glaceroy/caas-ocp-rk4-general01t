@@ -1,0 +1,6 @@
+aipVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: auth-pol-deny-all
+  namespace: {{ .Values.servicemesh.namespace }}
+spec: {}
