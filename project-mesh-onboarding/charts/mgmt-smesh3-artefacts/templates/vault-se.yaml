@@ -1,0 +1,37 @@
+{{ if and (hasKey .Values.servicemesh "vaultsenamespace") (hasKey .Values.servicemesh "vaultsehost") (hasKey .Values.servicemesh "apiservercidr") }}
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: vault-se
+  namespace: {{ .Values.servicemesh.vaultsenamespace }}
+spec:
+  exportTo:
+  - "*"
+  hosts:
+  - kubernetes.default.svc.cluster.local
+  addresses:
+  - {{ .Values.servicemesh.apiservercidr }}
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  location: MESH_INTERNAL
+  resolution: NONE
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: vault-sc-se
+  namespace: {{ .Values.servicemesh.vaultsenamespace }}
+spec:
+  exportTo:
+  - "*"
+  hosts:
+  - {{ .Values.servicemesh.vaultsehost }}
+  ports:
+  - number: 8200
+    name: http-vault
+    protocol: HTTPS
+  location: MESH_INTERNAL
+  resolution: DNS
+{{ end }}

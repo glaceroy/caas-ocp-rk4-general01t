@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: user-workload-access
+  namespace: {{ .Values.servicemesh.namespace }}
+spec:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              networking.openshift.io/policy-groups: monitoring
+  podSelector: {}
+  policyTypes:
+  - Ingress

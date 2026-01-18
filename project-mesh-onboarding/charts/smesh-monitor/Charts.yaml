@@ -1,0 +1,6 @@
+apiVersion: v2
+name: smesh-monitor
+version: 0.0.1
+description: A Helm chart for deploying smesh3 monitor
+maintainers:
+  - name: Aiyaz Khan
