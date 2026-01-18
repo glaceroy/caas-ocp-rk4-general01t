@@ -1,11 +1,11 @@
 servicemesh:
   namespace: istio-system
-  vaultsenamespace: <<testing>>
+  vaultsenamespace: lbg-dev-istiomeshwide-1-dev-pb
   vautlsehost: <<testing>>
-  apiservercidr: <<testing>>
+  apiservercidr: 172.30.0.1/32
   additionalsidecarnamespaces:
-    - default
-    - .
+  - default
+  - .
   ossm3operatornamespace: openshift-kiali
   ossm3version: v1.24-latest
   ossm3cniversion: v1.24-latest
@@ -17,13 +17,13 @@ servicemesh:
       - "."
       tlsDefaults:
         cipherSuites:
-          - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-          - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-          - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
         ecdhcurves:
-          - X25519
-          - CurveP256
+        - X25519
+        - CurveP256
         minProtocolVersion: TLSV1_2
       enableTracing: false
       VerifyCertificateAtClient: true
@@ -60,6 +60,7 @@ servicemesh:
             cpu: 200m
             memory: 256Mi
 
+  vaultsehost: vault-nonprod.lloydsbanking.cloud
 servicemeshMonitoring:
   scrapeInterval: 30s
   scrapePort: http-monitoring
@@ -69,4 +70,7 @@ servicemeshMonitoring:
 network:
   allow:
     apiserver:
-      - <<testing>>
+    - cidr: 100.10.0.0/16
+    - cidr: 100.10.10.1/24
+    - cidr: 100.10.10.2/24
+    - cidr: 100.10.10.3.24
