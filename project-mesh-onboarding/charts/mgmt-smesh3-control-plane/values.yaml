@@ -1,7 +1,7 @@
 servicemesh:
   namespace: istio-system
   vaultsenamespace: lbg-dev-istiomeshwide-1-dev-pb
-  vautlsehost: <<testing>>
+  vaultsehost: vault-nonprod.lloydsbanking.cloud
   apiservercidr: 172.30.0.1/32
   additionalsidecarnamespaces:
   - default
@@ -60,7 +60,6 @@ servicemesh:
             cpu: 200m
             memory: 256Mi
 
-  vaultsehost: vault-nonprod.lloydsbanking.cloud
 servicemeshMonitoring:
   scrapeInterval: 30s
   scrapePort: http-monitoring
