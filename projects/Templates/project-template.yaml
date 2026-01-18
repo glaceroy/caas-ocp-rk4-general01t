@@ -7,7 +7,6 @@ metadata:
     portwork: 'true'
     AD_group: <ad-group>
     CMDB_AppID: <cmdb-app-id>
-    istio-injection: enabled
   annotations:
     openshift.io/description: Namespace for Smesh3 Service Mesh System Components
     openshift.io/display-name: Smesh3 System Namespace
