@@ -1,13 +1,5 @@
 ## This yaml is to enable smesh for namespaces
 
-- name: run service mesh member role for helm
-  command: helm upgrade --install smesh member enrollment --namespace {{ servicemesh.namespace }} --values {{ playbook_dir }}/charts/shared_helm_values/{{ cluster_name }}.yaml
-  run_once: true
-
-- name: run control plane helm
-  command: helm upgrade --install smesh control plane {{ playbook_dir }}/charts/service-mesh-control-plane --namespace {{ servicemesh.namespace }} --timeout 600s --values {{ playbook_dir }}/charts/shared_helm_values/{{ cluster_name }}.yaml
-  run_once: true
-
 - name: run injected gateway helm
   command: helm upgrade --install service-mesh-injected-gateway {{ playbook_dir }}/charts/service-mesh-injected-gateway --namespace {{ servicemesh.namespace }} --timeout 600s --values {{ playbook_dir }}/charts/shared_helm_values/{{ cluster_name }}.yaml
   run_once: true
